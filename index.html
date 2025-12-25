@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jub-Jub Gallery</title>
+    <style>
+        /* 1. 기본 스타일 */
+        body { font-family: sans-serif; margin: 0; background-color: #fafafa; }
+        
+        /* 2. 헤더 스타일 */
+        header {
+            background: white; border-bottom: 1px solid #dbdbdb;
+            padding: 15px 0; position: sticky; top: 0; z-index: 100;
+        }
+        .header-content {
+            max-width: 935px; margin: 0 auto; display: flex; align-items: center; padding: 0 20px;
+        }
+        .logo-img {
+            width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
+            margin-right: 20px; border: 1px solid #efefef;
+        }
+        .header-text h1 { margin: 0; font-size: 20px; color: #262626; }
+        .header-text p { margin: 2px 0 0; font-size: 14px; color: #8e8e8e; }
+
+        /* 3. 갤러리 스타일 */
+        .container { max-width: 935px; margin: 20px auto; padding: 0 10px; }
+        
+        /* 중요: 그리드 설정이 빠져있었습니다 */
+        .gallery { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 15px; 
+        }
+
+        .gallery-item {
+            cursor: pointer;
+            border: 1px solid #dbdbdb;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+        }
+
+        .item-caption {
+            padding: 10px;
+            font-size: 13px;
+            color: #262626;
+            text-align: left;
+            background: white;
+            line-height: 1.4;
+        }        
+
+        /* 4. 모달(팝업) 스타일 */
+        #modal {
+            display: none; position: fixed; z-index: 1000; top: 0; left: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
+            justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease;
+        }
+        #modal.show { opacity: 1; }
+        #modal-img { 
+            max-width: 85%; max-height: 85%; transition: transform 0.3s ease; transform: scale(0.8); 
+        }
+        #modal.show #modal-img { transform: scale(1); }
+        .nav-btn { position: absolute; color: white; font-size: 40px; cursor: pointer; padding: 20px; user-select: none; z-index: 1001; }
+        .prev { left: 10px; } .next { right: 10px; }
+
+        /* 5. 애니메이션 효과 */
+        .fade-anim { animation: fadeEffect 0.4s ease; }
+        @keyframes fadeEffect {
+            from { opacity: 0.4; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-content">
+        <img src="logo.png" alt="Logo" class="logo-img">
+        <div class="header-text">
+            <h1>MY PORTFOLIO</h1>
+            <p>@jub_jub_gallery</p>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="gallery">
+        <div class="gallery-item">
+            <img src="1.jpg">
+            <div class="item-caption">
+                첫 번째 작품 설명입니다.<br>
+                2025-12-25
+            </div>
+        </div>
+        <div class="gallery-item">
+            <img src="2.jpg">
+            <div class="item-caption">두 번째 이미지 설명</div>
+        </div>
+        <div class="gallery-item">
+            <img src="3.jpg">
+            <div class="item-caption">세 번째 이미지 설명</div>
+        </div>
+        <div class="gallery-item">
+            <img src="4.jpg">
+            <div class="item-caption">네 번째 이미지 설명</div>
+        </div>
+    </div>
+</div>
+
+<div id="modal">
+    <span class="nav-btn prev" onclick="changeImage(-1)">&#10094;</span>
+    <img id="modal-img" draggable="false">
+    <span class="nav-btn next" onclick="changeImage(1)">&#10095;</span>
+</div>
+
+<script>
+    const modal = document.getElementById("modal");
+    const modalImg = document.getElementById("modal-img");
+    const images = document.querySelectorAll(".gallery-item img");
+    let currentIndex = 0;
+
+    images.forEach((img, index) => {
+        img.parentElement.onclick = () => {
+            currentIndex = index;
+            openModal();
+        };
+    });
+
+    function openModal() {
+        modalImg.src = images[currentIndex].src;
+        modal.style.display = "flex";
+        setTimeout(() => modal.classList.add("show"), 10);
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() {
+        modal.classList.remove("show");
+        setTimeout(() => { modal.style.display = "none"; }, 300);
+        document.body.style.overflow = "auto";
+    }
+
+    function changeImage(step) {
+        modalImg.classList.remove("fade-anim");
+        void modalImg.offsetWidth; 
+        currentIndex = (currentIndex + step + images.length) % images.length;
+        modalImg.src = images[currentIndex].src;
+        modalImg.classList.add("fade-anim");
+    }
+
+    // 드래그/터치 로직
+    let startX = 0;
+    let isDragging = false;
+    const startAction = (e) => {
+        startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        isDragging = true;
+    };
+    const endAction = (e) => {
+        if (!isDragging) return;
+        let endX = e.type.includes('touch') ? e.changedTouches[0].clientX : e.clientX;
+        let diff = startX - endX;
+        if (Math.abs(diff) > 50) {
+            if (diff > 0) changeImage(1);
+            else changeImage(-1);
+        }
+        isDragging = false;
+    };
+
+    modal.addEventListener('mousedown', startAction);
+    window.addEventListener('mouseup', endAction);
+    modal.addEventListener('touchstart', startAction);
+    modal.addEventListener('touchend', endAction);
+
+    modal.onclick = (e) => { if(e.target === modal) closeModal(); };
+</script>
+
+</body>
+</html>
